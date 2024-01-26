@@ -7,15 +7,16 @@ services:
     environment:
       POSTGRES_USER: panzerknaker
       POSTGRES_PASSWORD: 1212
-      POSTGRES_DB: TuristBusDB
+      POSTGRES_DB: turistbusdb
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
-  station_service:
-    container_name: station_service
-    build: ./station_service/
+  turistbus_service:
+    restart: on-failure
+    container_name: turistbus_service
+    build: ./turistbus_service/
     ports:
       - "8000:80"
     depends_on:
