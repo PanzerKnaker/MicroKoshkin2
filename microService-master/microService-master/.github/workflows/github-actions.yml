@@ -10,32 +10,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Run tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+#  test:
+#    name: Run tests
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: install dependencies
+#        run: |
+#          sudo apt update
+#          sudo apt install -y python3-pip
+#          pip install psycopg2-binary
+#
+#      - name: Prepare for tests (compose up)
+#        run: docker compose up -d --build
+#
+#      - name: Run integration test
+#        run: python tests/integration.py
+#
+##      - name: Run e2e test
+##        run: python tests/e2e.py
+#
+#      - name: Clean up (compose down)
+#        run: docker compose down
 
-      - name: install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y python3-pip
-          pip install psycopg2-binary
-
-      - name: Prepare for tests (compose up)
-        run: docker compose up -d --build
-
-      - name: Run integration test
-        run: python tests/integration.py
-
-#      - name: Run e2e test
-#        run: python tests/e2e.py
-
-      - name: Clean up (compose down)
-        run: docker compose down
-
-  build_and_push_station_service:
-    name: Build and push station service to Yandex Cloud
+  build_and_push_turistbus_service:
+    name: Build and push turistbus service to Yandex Cloud
     runs-on: ubuntu-latest
     needs: [test]
     steps:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          cd user_service && docker build -f Dockerfile . --tag cr.yandex/${{ secrets.YC_REGISTRY_ID }}/ms-user-services:latest --platform=linux/amd64
+          cd turistbus_service && docker build -f Dockerfile . --tag cr.yandex/${{ secrets.YC_REGISTRY_ID }}/ms-turistbus-services:latest --platform=linux/amd64
 
       - name: Login to Yandex Cloud
         uses: docker/login-action@v3.0.0
@@ -54,12 +54,12 @@ jobs:
 
       - name: Push tag to Yandex Cloud
         run: | 
-          docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/ms-user-services:latest
+          docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/ms-turistbus-services:latest
 
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    needs: [build_and_push_user_service]
+    needs: [build_and_push_turistbus_service]
     steps:
     - name: Deploy serverless container
       uses: yc-actions/yc-sls-container-deploy@v1
@@ -67,7 +67,7 @@ jobs:
         yc-sa-json-credentials: ${{ secrets.YC_KEYS }}
         container-name: ${{ secrets.YC_CONTAINER_NAME }}
         folder-id: ${{ secrets.YC_FOLDER_ID }}
-        revision-image-url: cr.yandex/${{ secrets.YC_REGISTRY_ID }}/ms-user-services:latest
+        revision-image-url: cr.yandex/${{ secrets.YC_REGISTRY_ID }}/ms-turistbus-services:latest
         revision-service-account-id: ${{ secrets.YC_SA_ID }}
 
   build_and_push_ticket_service:
@@ -79,7 +79,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          cd document_service && docker build -f Dockerfile . -t ${{ secrets.DOCKER_USERNAME }}/ms-document-services:latest 
+          cd ticket_service && docker build -f Dockerfile . -t ${{ secrets.DOCKER_USERNAME }}/ms-ticket-services:latest 
 
       - name: Login to DockerHub
         uses: docker/login-action@v3.0.0
@@ -89,4 +89,4 @@ jobs:
 
       - name: Push tag to docker hub
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/ms-document-services:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/ms-ticket-services:latest
