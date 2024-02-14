@@ -70,7 +70,7 @@ def check_user_roles():
         token_info = keycloak_openid.introspect(token["access_token"])
         if "testRole" not in token_info["realm_access"]["roles"]:
             raise HTTPException(status_code=403, detail="Access denied")
-        return "Autorization success!"
+        return "Autorization success!!!"
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid token or access denied")
 
