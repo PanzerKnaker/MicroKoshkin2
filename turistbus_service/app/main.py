@@ -56,7 +56,7 @@ async def add_turistbus(turistBus: turist_bus_model, db: db_dependency):
         db.refresh(db_turistbus)
 
 
-@app.post("/delete_TuristBus")
+@app.delete("/delete_TuristBus")
 async def delete_turistbus(turistbus_id: int, db: db_dependency):
         try:
             turistbus = db.query(TuristBus).filter(
