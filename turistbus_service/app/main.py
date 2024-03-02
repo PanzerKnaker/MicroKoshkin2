@@ -35,7 +35,7 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 
 @app.get("/alive", status_code=status.HTTP_200_OK)
-async def station_alive():
+async def turistbus_alive():
     return {'message' : 'service alive'}
 
 
@@ -47,7 +47,9 @@ async def fetch_turistbuses(db: db_dependency):
 
 @app.post("/add_TuristBus")
 async def add_turistbus(turistBus: turist_bus_model, db: db_dependency):
-        db_turistbus = TuristBus(modelbus=turistBus.modelbus,
+        db_turistbus = TuristBus(
+                        id= turistBus.id,
+                        modelbus=turistBus.modelbus,
                         destination=turistBus.destination,
                         datego=turistBus.datego,
                         seats=turistBus.seats)
@@ -64,6 +66,7 @@ async def delete_turistbus(turistbus_id: int, db: db_dependency):
             ).first()
             db.delete(turistbus)
             db.commit()
+            return "Success"
         except Exception as _ex:
             raise HTTPException(status_code=404, detail='Bus not found')
 
