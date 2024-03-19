@@ -48,7 +48,7 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
-@app.post("/get-token")
+@app.post("/Login")
 async def get_token(username: str = Form(...), password: str = Form(...)):
     try:
         # Получение токена
@@ -82,46 +82,74 @@ async def ticket_alive():
         return C
 
 
-@app.get("/tripticket/{tripticket_id}")
-async def fetch_tickets(tripticket_id: int, db: db_dependency):
-    try:
-        result = db.query(TripTicket).filter(TripTicket.id == tripticket_id).first()
-    except Exception:
-        raise HTTPException(status_code=404, detail='Tickets not found')
-    return result
-
-
-def check_turistbus_existence(direction: str, db: db_dependency):
+@app.get("/triptickets_all")
+async def fetch_tickets(db: db_dependency):
     if (check_user_roles()):
-        return db.query(TuristBus).filter(
-            TuristBus.direction == direction
+        result = db.query(TripTicket).all()
+        return result
+    else:
+        return C
+
+@app.get("/find_bus")
+def check_turistbus_existence(destinationbus: str, db: db_dependency):
+    if (check_user_roles()):
+        result=db.query(TuristBus).filter(
+            TuristBus.destination == destinationbus
+        ).first()
+        return result
+    else:
+        return C
+
+@app.get("/tripticket_by_id")
+def fetch_ticket_id(id_ticket: int, db: db_dependency):
+    if (check_user_roles()):
+        return db.query(TripTicket).filter(
+            TripTicket.id == id_ticket
         ).first()
     else:
-        return "Wrong User Token"
-
+        return C
 
 @app.post("/buy_tripticket")
-async def buy_tripticket(direction: str,
-                     name: str,
+async def buy_tripticket( name_user: str,
                      last_name: str,
                      email: str,
+                     destination: str,
                      db: db_dependency):
     try:
-        turistbus = check_turistbus_existence(direction, db)
+        turistbus = check_turistbus_existence(destination, db)
         if turistbus.seats > 0:
-            tripticket = TripTicket(user_name=name,
+            tripticket = TripTicket(user_name=name_user,
                             user_last_name=last_name,
                             user_email=email,
                             turistbus_id=turistbus.id,
                             datego=turistbus.datego)
+            Text = [
+                str(turistbus.id),
+                name_user,
+                last_name,
+                email,
+                str(turistbus.datego)
+            ]
             gen_file = open('data.txt', 'w')
-            gen_file.write(tripticket)
-            tripticket.seats -= 1
+            gen_file.writelines(Text)
+            gen_file.close()
+            turistbus.seats -= 1
             db.add(tripticket)
             db.commit()
             db.refresh(tripticket)
+            db.refresh(turistbus)
+            return print(tripticket)
     except HTTPException as e:
         print(f"Error: {e}")
+
+@app.delete("/delete_tripticket_by_id")
+def delete_ticket_id(id_ticket: int, db: db_dependency):
+        try:
+            tripticket = db.query(TripTicket).filter(TripTicket.id == id_ticket).first()
+            db.delete(tripticket)
+            db.commit()
+        except Exception as _ex:
+            raise HTTPException(status_code=404, detail='Ticket not found')
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv('PORT', 80)))
